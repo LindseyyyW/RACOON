@@ -150,3 +150,4 @@ We also adopt the [WikiGS](http://www.cs.toronto.edu/~oktie/webtables/) for eval
 
 We use multiple existing systems as baseline for evaluation. We took the code released by the author and made minor changes to fit our setting, please refer to the paper for more details. 
 # RACOON
+Clone EntityConverter from this github repo: https://github.com/google/freebase-wikidata-converter
