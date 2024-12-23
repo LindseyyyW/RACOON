@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from random import shuffle, seed
 from tqdm import tqdm
+import subprocess
 from sklearn.metrics import multilabel_confusion_matrix
 import sys
 sys.path.append("/mmfs1/gscratch/balazinska/linxiwei/baseline/freebase-wikidata-convert")
@@ -206,9 +207,6 @@ def get_col_relations(column1, column2):
     for i in range(length):
         pid1, em1 = column1[i]
         pid2, em2 = column2[i]
-        # if pid1 not in pid_to_qid or pid2 not in pid_to_qid: 
-        #     print("NO QID")
-        #     continue
         if pid1 not in pid_to_mid: continue
         mid1 = pid_to_mid[pid1]
         mid1 = "/" + mid1.replace(".", "/")
@@ -237,10 +235,51 @@ def get_triplets(column):
          if item not in info_set:
                info_set[item] = []
          info_set[item].append(entity_label)
-      
-   return info_set
+   sorted_info_set = dict(sorted(info_set.items(), key=lambda x: len(x[1]), reverse=True))
+   return sorted_info_set
 
+def get_triplets_wk(column):
+   info_set = {}
+   for (pid, em) in column:
+      qid, entity_label = wikidata_lookup(em)
+      if qid is None: continue
+      _, entity_set = get_instance_of(qid)
+      for item in entity_set:
+         if item not in info_set:
+               info_set[item] = []
+         info_set[item].append(entity_label)
+   sorted_info_set = dict(sorted(info_set.items(), key=lambda x: len(x[1]), reverse=True))
+   return sorted_info_set
 
+def get_triplets_re(column):
+    info_set = {}
+    for (pid, em) in column:
+        spans = refined.process_text(em)
+        if (len(spans) < 1): continue
+        item = spans[0]
+        item_string = item.__repr__()
+        res = item_string.strip("[]").split(", ")
+        qid_match = re.search(r'wikidata_entity_id=(\w+)', res[1])
+        if qid_match:
+            qid = qid_match.group(1)
+        else:
+            continue
+        _, entity_set = get_instance_of(qid)
+
+        label_match = re.search(r'wikipedia_entity_title=([^,]+)', res[2])
+        if label_match:
+            entity_label = label_match.group(1)
+        else:
+            continue
+        
+        cnt = 0
+        for item in entity_set:
+            cnt += 1
+            if item not in info_set:
+                info_set[item] = []
+            info_set[item].append(entity_label)
+    sorted_info_set = dict(sorted(info_set.items(), key=lambda x: len(x[1]), reverse=True))
+    return sorted_info_set
 
 def serialize_dict(data):
     serialized_str = "Entities in this column are instances of the following wikidata entities: "
@@ -261,6 +300,64 @@ def load_type_vocab(data_dir):
             index, t = line.strip().split('\t')
             type_vocab[t] = int(index)
     return type_vocab
+
+def wikidata_lookup(em):
+    em = em.replace(" ", "_")
+    url = f'https://www.wikidata.org/w/api.php?action=wbsearchentities&search={em}&format=json&language=en&uselang=en&type=item&limit=1'
+    response = curl_request(url)
+    qid = None
+    entity = None
+    if response:  # Check if the response is not empty
+        try:
+            data = json.loads(response)
+            content = data.get('search', [])
+            if content:
+                item = content[0]
+                qid = item.get('id', {})
+                entity = item.get('label', {})
+
+        except json.JSONDecodeError as e:
+            return qid, entity
+    return qid, entity
+
+def get_info_wk(column):
+    en_labels = []
+    for (pid, em) in column:
+        qid, entity = wikidata_lookup(em)
+        if entity is not None:
+            en_labels.append(entity)
+    return en_labels
+
+def curl_request(url):
+    
+    # Define the command to execute using curl
+    command = ['curl', '-s', '-o', '-', url]
+    result = subprocess.run(command, capture_output=True, text=True)
+    return result.stdout
+
+from refined.data_types.base_types import Span, Entity
+from refined.inference.processor import Refined
+import re
+
+refined = Refined.from_pretrained(model_name='wikipedia_model',
+                                  entity_set="wikidata",
+                                  use_precomputed_descriptions=False)
+def get_info_re(column):
+    en_labels = []
+    text = ""
+    for (pid, em) in column:
+        spans = refined.process_text(em)
+        print(spans)
+        if (len(spans) < 1): continue
+        item = spans[0]
+        item_string = item.__repr__()
+        res = item_string.strip("[]").split(", ")
+        label_match = re.search(r'wikipedia_entity_title=([^,]+)', res[2][:-1])
+        if label_match:
+            entity = label_match.group(1)
+            en_labels.append(entity)
+
+    return en_labels
     
 type_vocab = load_type_vocab(data_dir)
 
