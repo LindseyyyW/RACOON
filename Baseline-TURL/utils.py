@@ -13,9 +13,6 @@ from converter import EntityConverter
 entity_converter = EntityConverter("https://query.wikidata.org/sparql")
 from SPARQLWrapper import SPARQLWrapper, JSON
 import openai
-#from openai.error import InvalidRequestError
-#from ratelimiter import RateLimiter
-
 import pandas as pd
 data_dir = '/mmfs1/gscratch/balazinska/linxiwei/TURL'
 
