@@ -1,3 +1,3 @@
-# RACOON
-Clone EntityConverter from this github repo: https://github.com/google/freebase-wikidata-converter
-Clone SOTAB-V2 setup from this github repo: https://github.com/wbsg-uni-mannheim/TabAnnGPT
+# RACOON<sup>+</sup>
+
+This repository hosts the source code of the RACOON<sup>+</sup> prototype system, which is introduced in the paper: *"RACOON<sup>+</sup>: A System for LLM-based Table Understanding with a Knowledge Graph"*.
