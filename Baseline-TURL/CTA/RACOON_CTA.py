@@ -4,7 +4,10 @@ import json
 from random import seed
 from tqdm import tqdm
 from utils import *
-from data.TURL_CTA_label_reduction import reduced_label_set
+from pathlib import Path
+data_path = Path(__file__).parent.parent / 'data'
+sys.path.append(str(data_path))
+from TURL_CTA_label_reduction import reduced_label_set
 from pruning import *
 import os
 import openai
@@ -25,7 +28,6 @@ def get_info_re(column):
     text = ""
     for (pid, em) in column:
         spans = refined.process_text(em)
-        print(spans)
         if (len(spans) < 1): continue
         item = spans[0]
         item_string = item.__repr__()
@@ -150,13 +152,14 @@ def main():
 
     args = parser.parse_args()
 
-    data_dir = 'data/'
+    data_dir = os.path.join(os.getenv('DATA_DIR', '.'), 'data')
     model = args.model
     context = args.context
     info = args.info
 
     OUTPUT = f"{model}/RACOON_{context}_{info}.csv"
-    linking_output = f"{context}_linking.csv"
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+
     res_format = "{'type': []}"
 
     with open(os.path.join(data_dir, 'test.table_col_type.json'), 'r') as f:
@@ -178,6 +181,8 @@ def main():
             table.append(column)
         table_cols = table.copy()
         table = list(zip(*table))
+        table_row = table.copy()
+        table = map(lambda x: ", ".join(x), table)
         CSV_like = ",\n".join(table)
 
         # --------------------- KG-Linker --------------------- #
@@ -186,7 +191,7 @@ def main():
                 col_qids = get_qid_wk(col)
                 EL_result_table.append(col_qids)
         else:
-            column_wise_table_spans = get_column_wise_spans(context, table, table_cols)
+            column_wise_table_spans = get_column_wise_spans(context, table_row, table_cols)
             EL_result_table = []
             for column_wise_table_span in column_wise_table_spans:
                 EL_result_col = process_EL_res(column_wise_table_span)
@@ -209,8 +214,9 @@ def main():
         elif info == "type":
             types,_ = get_types(EL_result_table)
             pruned_hint = pruning_orig(CSV_like,types)
-            pattern = r"-?\s*Column \d+:(.*?)(?:\n|$)"
-            dict_strings = re.findall(pattern, pruned_hint)
+            pattern = r"-?\s*Column \d+:\s*(.+?)(?=\n-?\s*Column \d+:|\Z)"
+            dict_strings = re.findall(pattern, pruned_hint, re.DOTALL)
+            dict_strings = [s.strip().strip('[]').strip() for s in dict_strings]
             hint_list = [safe_parse_dict(d) for d in dict_strings]
             hint = serialize_dict(hint_list[0])
 

@@ -1,10 +1,14 @@
 import os
+import sys
 import csv
 import json
 from random import seed
 from tqdm import tqdm
 from utils import parse_example, response
-from data.TURL_CTA_label_reduction import reduced_label_set
+from pathlib import Path
+data_path = Path(__file__).parent.parent / 'data'
+sys.path.append(str(data_path))
+from TURL_CTA_label_reduction import reduced_label_set
 import os
 import openai
 
@@ -13,9 +17,10 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def main():
 
-    data_dir = 'data/'
+    data_dir = os.path.join(os.getenv('DATA_DIR', '.'), 'data')
     model = "gpt-4o-mini"
     OUTPUT = f"{model}/NoHint_baseline.csv"
+    os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
     res_format = "{'type': []}"
     with open(os.path.join(data_dir, 'test.table_col_type.json'), 'r') as f:
         examples = json.load(f)
