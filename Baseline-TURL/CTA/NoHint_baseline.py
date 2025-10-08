@@ -61,15 +61,15 @@ def main():
             }
         ]
 
-        for i in range(num_col):
+        for i in range(1, num_col):
             chatgpt_msg = response(messages, model)
             prediction = chatgpt_msg.content
             all_preds.append(prediction)
             messages.append(dict(chatgpt_msg))
             messages.append(
                 { "role": "user",
-                "content": f"""Your task is to choose only one type from the list to annotate the {i+2} column. Solve this task by following these steps: 
-                1. Look at the cells in the {i+2} column of the above table. 
+                "content": f"""Your task is to choose only one type from the list to annotate the {i+1} column. Solve this task by following these steps: 
+                1. Look at the cells in the {i+1} column of the above table. 
                 2. Choose only one valid type from the given list of types. Check that the type MUST MUST MUST be in the given list. Give the answer in valid JSON format.
                 """
             })

@@ -2,6 +2,8 @@ import os
 import sys
 import csv
 import json
+import re
+import ast
 from random import seed
 from tqdm import tqdm
 from utils import parse_example, response
@@ -74,7 +76,7 @@ def main():
         ]
 
         coarse_types = []
-        for i in range(num_col):
+        for i in range(1, num_col):
             chatgpt_msg = response(messages1, model)
             prediction = chatgpt_msg.content
             prediction = re.sub(r"```json|```", "", prediction).strip()
@@ -96,8 +98,8 @@ def main():
 
                     Follow these steps:
                     1. Examine the table to understand its overall theme.
-                    2. Analyze the values in the {i+2} column and determine their semantic meaning.
-                    3. Briefly summarize the common characteristic of the values in the {i+2} column.
+                    2. Analyze the values in the {i+1} column and determine their semantic meaning.
+                    3. Briefly summarize the common characteristic of the values in the {i+1} column.
                     4. Assign a **single best-fitting type** to the column.
                     
                     Return the result **only** as a valid JSON object, following this format:  
@@ -129,16 +131,16 @@ def main():
             }
         ]
 
-        for i in range(num_col):
+        for i in range(1, num_col):
             chatgpt_msg = response(messages2, model)
             prediction = chatgpt_msg.content
             all_preds2.append(prediction)
             messages2.append(dict(chatgpt_msg))
             messages2.append(
                 { "role": "user",
-                "content": f"""Your task is to assign only one semantic class to the {i+2} column that best represents all cells of this column. Solve this task by following these steps: 
-                1. Look at the cells in the {i+2} column of the above table.
-                2. Take the coarse type for this column given by another LLM as a reference: {coarse_types[i+1]}.
+                "content": f"""Your task is to assign only one semantic class to the {i+1} column that best represents all cells of this column. Solve this task by following these steps: 
+                1. Look at the cells in the {i+1} column of the above table.
+                2. Take the coarse type for this column given by another LLM as a reference: {coarse_types[i]}.
                 3. Choose only one valid type from the given list of types. Check that the type MUST MUST MUST be in the given list. Give the answer in valid JSON format.
                 """
             })
