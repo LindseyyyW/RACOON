@@ -1,20 +1,15 @@
 import os
-from openai import OpenAI
 import csv
 import json
 from pathlib import Path
-from random import shuffle, seed
-import numpy as np
 from tqdm import tqdm
 import os
 import openai
 import sys
 from utils import *
-import pandas as pd
 data_path = Path(__file__).parent.parent / 'data'
 sys.path.append(str(data_path))
 from TURL_RE_label_reduction import RE_label_set
-from openai import OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
