@@ -53,7 +53,7 @@ def pruning_orig(table, hint):
         Keep the output format exactly the same:
         - Column N: <original hint with only clearly unhelpful or inaccurate parts removed>
         
-        Your output should be a string, not a list. 
+        Your output should be a string, not a list. Your output should include all the columns in the original hint even if the pruned hint is empty for some columns.
                       
         If a column's hint is already empty, keep it that way.
         Return only the pruned hint block.

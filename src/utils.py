@@ -245,7 +245,7 @@ def get_types(EL_res):
     
     Returns:
         types: A list of dictionaries (one per column), where each dictionary maps
-               type QIDs to lists of cell indices that belong to that type.
+               type QIDs to the number of cell indices that belong to that type.
         col_type_size: A dictionary mapping column indices to the number of distinct
                        types found in that column.
     """
@@ -289,8 +289,8 @@ def get_types(EL_res):
                 if max_type not in final_counter: 
                     final_counter[max_type] = []
                 final_counter[max_type].append(cell)
-
-        types.append(final_counter)
+        type_dict = {key: len(value) for key, value in final_counter.items()}
+        types.append(type_dict)
         size = len(final_counter)
         col_type_size[i] = size
     
@@ -417,7 +417,7 @@ def get_entity_relation(EL_res):
 def serialize_dict(data):
     serialized_str = "Entities in this column are instances of the following wikidata entities: "
     for key, value in data.items():
-        count = len(value) if isinstance(value, list) else value
+        count = value
         cell_word = "cell" if count == 1 else "cells"
         serialized_str += f"{key} ({count} {cell_word}), "
     
@@ -580,3 +580,16 @@ def parse_json_pred_RE(prediction):  # parse a JSON response
         predicted_type = "None"
 
     return predicted_type
+
+def extract_column_pair_rel(text):
+    result = []
+    lines = text.strip().split('\n')
+    for line in lines:
+        line = line.strip()
+        if ':' in line:
+            description = line.split(':', 1)[1].strip()
+            result.append(description)
+        else:
+            result.append("")
+            
+    return result
