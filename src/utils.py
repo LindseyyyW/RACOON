@@ -546,3 +546,37 @@ def f1_score_multilabel(true_list, pred_list):
     class_f1 = np.nan_to_num(class_f1)
     macro_f1 = class_f1.mean()
     return (micro_f1, macro_f1, class_f1, conf_mat, p, r)
+
+def parse_pred_RE(prediction): 
+    try:
+        final_answer_start = prediction.find("FINAL ANSWER:") + len("FINAL ANSWER:")
+        final_answer_str = prediction[final_answer_start:].strip()
+
+        # Convert the string to a valid JSON (replace single quotes with double quotes)
+        final_answer_json = json.loads(final_answer_str.replace("'", '"'))
+
+        # Extract the type
+        predicted_type = final_answer_json['relation'][0]  # Get the first element in the list
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+        predicted_type = "None"
+        
+    return predicted_type
+
+def parse_json_pred_RE(prediction):  # parse a JSON response
+    try:
+        # Extract JSON substring if there is a prefix like "FINAL ANSWER: "
+        match = re.search(r'\{.*\}', prediction)
+        if not match:
+            return "NA"
+        
+        json_str = match.group(0)
+
+        # Convert the string to a valid JSON (replace single quotes with double quotes)
+        final_answer_json = json.loads(json_str.replace("'", '"'))
+
+        # Extract the type
+        predicted_type = final_answer_json['relation'][0]  # Get the first element in the list
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+        predicted_type = "None"
+
+    return predicted_type
