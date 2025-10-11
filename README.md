@@ -95,3 +95,20 @@ Both programs generate CSV files with the format: `{model}/RACOON_{context}_{inf
 Make sure to set the following environment variables:
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `DATA_DIR`: Path to the data directory (defaults to `../data` relative to the script)
+
+## Evaluation
+
+To evaluate the results of CTA or RE experiments, use the evaluation scripts:
+
+**Column Type Annotation (CTA):**
+```bash
+python src/CTA/CTA_eval.py <path_to_results_csv>
+```
+
+**Relation Extraction (RE):**
+```bash
+python src/RE/RE_eval.py <path_to_results_csv>
+```
+
+**Output:**
+The evaluation scripts compute and print the micro-averaged F1 score, which is the main metric used in the paper.
