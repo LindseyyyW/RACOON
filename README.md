@@ -7,12 +7,15 @@ This repository hosts the source code of the RACOON<sup>+</sup> prototype system
 ```
 RACOON/
 ├── README.md                           
-├── requirements.txt                    # Python dependencies
+├── requirements.txt                   # Python dependencies
 └── src/                               # Source code directory
     ├── CTA/                           # Column Type Annotation module
     ├── RE/                            # Relation Extraction module
-     ├── data/                          # Datasets used and label mappings
-     └── utils.py                       # Shared utility functions for both the CTA and RE workloads
+    ├── data/                          # Datasets used and label mappings
+    ├── KG_Linker.py/                  # The KG-Linker component in RACOON+
+    ├── pruning.py/                    # The pruning module in RACOON+
+    └── utils.py                       # Shared utility functions for both the CTA and RE workloads
+    
 ```
 
 ## Installation
@@ -33,10 +36,12 @@ The RACOON+ system supports column type annotation and relation extraction using
 
 ```bash
 # Column Type Annotation
-python src/CTA/RACOON_CTA.py [OPTIONS]
+cd src/CTA
+python RACOON_CTA.py [OPTIONS]
 
-# Relation Extraction  
-python src/RE/RACOON_RE.py [OPTIONS]
+# Relation Extraction
+cd src/RE
+python RACOON_RE.py [OPTIONS]
 ```
 
 #### Command Line Arguments
@@ -63,14 +68,12 @@ python src/RE/RACOON_RE.py [OPTIONS]
 #### Example Usage
 
 ```bash
-# Basic usage with default settings
-python src/CTA/RACOON_CTA.py
 
 # Use GPT-4o with hybrid context and type information
-python src/CTA/RACOON_CTA.py --model gpt-4o --context hybrid --info type
+python RACOON_CTA.py --model gpt-4o --context hybrid --info type
 
 # Use cell-level context with entity information
-python src/CTA/RACOON_CTA.py --context cell --info entity
+python RACOON_CTA.py --context cell --info entity
 ```
 
 
@@ -102,12 +105,14 @@ To evaluate the results of CTA or RE experiments, use the evaluation scripts:
 
 **Column Type Annotation (CTA):**
 ```bash
-python src/CTA/CTA_eval.py <path_to_results_csv>
+cd src/CTA
+python CTA_eval.py <path_to_results_csv>
 ```
 
 **Relation Extraction (RE):**
 ```bash
-python src/RE/RE_eval.py <path_to_results_csv>
+cd src/RE
+python RE_eval.py <path_to_results_csv>
 ```
 
 **Output:**
