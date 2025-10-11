@@ -18,6 +18,15 @@ from openai import OpenAI
 import argparse
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+from refined.inference.processor import Refined
+import sys
+sys.path.append('..')
+from KG_Linker import get_column_wise_spans
+from pruning import *
+
+refined = Refined.from_pretrained(model_name='wikipedia_model',
+                                  entity_set="wikidata")
+preprocessor = refined.preprocessor
 
 def main():
     parser = argparse.ArgumentParser(description='Relation Extraction with RACOON+')
@@ -49,8 +58,9 @@ def main():
         table_raw, table_with_en, label, headers, meta_data, num_col, max_num_row, colset = parse_example(example)
         x = min(len(table_raw),10)
         y = len(table_raw[0])
-    
         table = []
+        all_preds = []
+        hints = []
         for col in range(y):
             column = []
             for row in range(x):
@@ -58,16 +68,67 @@ def main():
                     column.append("")
                 else: column.append(table_raw[row][col])
             table.append(column)
-        num_col = len(table)
+        table_cols = table.copy()
         table = list(zip(*table))
+        table_row = table.copy()
         table = map(lambda x: ", ".join(x), table)
-        CSV_like = "\n".join(table)
+        CSV_like = ",\n".join(table)
 
+        # --------------------- KG-Linker --------------------- #
+        if context == "wikiAPI":
+            for col in colset:
+                col_qids = get_qid_wk(col)
+                EL_result_table.append(col_qids)
+        else:
+            column_wise_table_spans = get_column_wise_spans(context, table_row, table_cols)
+            EL_result_table = []
+            for column_wise_table_span in column_wise_table_spans:
+                EL_result_col = process_EL_res(column_wise_table_span)
+                EL_result_table.append(EL_result_col)
+
+        # --------------------- KG-Explorer --------------------- #
         hint = ""
+        if info == "entity":
+            table_entities = get_entity_label(EL_result_table)
+            # hint = f"Each cell may be linked to an entity in the Wikidata knowledge graph. When available, the entity labels corresponding to the cells in the first column are provided as a list: {col_info}."
+            orig_table_hint = []
+            for c in range(num_col):
+                t = "Column " + str(c) + ": " + str(table_entities[c])
+                orig_table_hint.append(t)
+            pruned_table_hint = pruning_orig(CSV_like, orig_table_hint)
+            pattern = r"-?\s*Column \d+:(.*?)(?:\n|$)"
+            hint_strings = re.findall(pattern, pruned_table_hint)
+            hint = f"The entity labels in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[0]}."
+        
+        elif info == "type":
+            types,_ = get_types(EL_result_table)
+            pruned_hint = pruning_orig(CSV_like,types)
+            pattern = r"-?\s*Column \d+:\s*(.+?)(?=\n-?\s*Column \d+:|\Z)"
+            dict_strings = re.findall(pattern, pruned_hint, re.DOTALL)
+            dict_strings = [s.strip().strip('[]').strip() for s in dict_strings]
+            hint_list = [safe_parse_dict(d) for d in dict_strings]
+            hint = serialize_dict(hint_list[0])
+
+        elif info == "des":
+            table_entities = get_entity_label_des(EL_result_table)
+            orig_table_hint = []
+            for c in range(num_col):
+                t = "Column " + str(c) + ": " + str(table_entities[c])
+                orig_table_hint.append(t)
+            pruned_table_hint = pruning_orig(CSV_like, orig_table_hint)
+            pattern = r"-?\s*Column \d+:(.*?)(?:\n|$)"
+            hint_strings = re.findall(pattern, pruned_table_hint)
+            hint = f"The entity labels in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[0]}."
+        
+        elif info == "relation":
+            table_relations = get_entity_relation(EL_result_table)
+            pruned_table_rel = pruning_rel(CSV_like, table_relations)
+            hint = "This table's columns are related in Wikidata as follows: " + pruned_table_rel
+
+
         hints.append(hint)
 
         
-        all_preds = []
         
         messages=[
             {

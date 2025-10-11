@@ -8,7 +8,6 @@ from pathlib import Path
 data_path = Path(__file__).parent.parent / 'data'
 sys.path.append(str(data_path))
 from TURL_CTA_label_reduction import reduced_label_set
-from pruning import *
 import os
 import openai
 import re
@@ -21,6 +20,7 @@ from refined.inference.processor import Refined
 import sys
 sys.path.append('..')
 from KG_Linker import get_column_wise_spans
+from pruning import *
 
 refined = Refined.from_pretrained(model_name='wikipedia_model',
                                   entity_set="wikidata")
