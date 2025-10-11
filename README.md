@@ -45,20 +45,20 @@ python src/RE/RACOON_RE.py [OPTIONS]
   - Options: Any valid OpenAI model name
   - Example: `--model gpt-4o`
 
-- `--context`: Context type for knowledge graph linking (default: `hybrid`)
+- `--context`: Context type for knowledge graph linking (default: `col`)
   - Options: `wikiAPI`, `cell`, `table`, `col`, `hybrid`
   - `wikiAPI`: Uses Wikipedia API for entity linking
-  - `cell`: Cell-level context for entity linking
-  - `table`: Table-level context for entity linking
-  - `col`: Column-level context for entity linking
-  - `hybrid`: Combines multiple context types
+  - `cell`: Cell context for entity linking
+  - `table`: Table context for entity linking
+  - `col`: Column context for entity linking
+  - `hybrid`: Hybrid context for entity linking
 
 - `--info`: Information type to extract from knowledge graph (default: `type`)
   - Options: `entity`, `des`, `type`, `relation`
   - `entity`: Extract entity labels from Wikidata
-  - `des`: Extract entity descriptions from Wikidata
-  - `type`: Extract semantic types from Wikidata
-  - `relation`: Extract relations between columns from Wikidata
+  - `des`: Extract entity labels and descriptions from Wikidata
+  - `type`: Extract entity types from Wikidata
+  - `relation`: Extract entity relations between cell pairs from Wikidata
 
 #### Example Usage
 
