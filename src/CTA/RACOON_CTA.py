@@ -3,7 +3,6 @@ import csv
 import json
 from random import seed
 from tqdm import tqdm
-from utils import *
 from pathlib import Path
 data_path = Path(__file__).parent.parent / 'data'
 sys.path.append(str(data_path))
@@ -21,6 +20,7 @@ import sys
 sys.path.append('..')
 from KG_Linker import get_column_wise_spans
 from pruning import *
+from utils import *
 
 refined = Refined.from_pretrained(model_name='wikipedia_model',
                                   entity_set="wikidata")
@@ -62,7 +62,7 @@ def main():
     parser = argparse.ArgumentParser(description='Column Type Annotation with RACOON+')
     parser.add_argument('--model', type=str, default='gpt-4o-mini',
                         help='OpenAI model to use (default: gpt-4o-mini)')
-    parser.add_argument('--context', type=str, default='hybrid',
+    parser.add_argument('--context', type=str, default='col',
                         choices=['wikiAPI', 'cell', 'table', 'col', 'hybrid'],
                         help='Context type (default: hybrid)')
     parser.add_argument('--info', type=str, default='type',
@@ -132,10 +132,13 @@ def main():
         
         elif info == "type":
             types,_ = get_types(EL_result_table)
-            pruned_hint = pruning_orig(CSV_like,types)
-            pattern = r"-?\s*Column \d+:\s*(.+?)(?=\n-?\s*Column \d+:|\Z)"
-            dict_strings = re.findall(pattern, pruned_hint, re.DOTALL)
-            dict_strings = [s.strip().strip('[]').strip() for s in dict_strings]
+            orig_types = []
+            for c in range(num_col):
+                t = "Column " + str(c) + ": " + str(types[c])
+                orig_types.append(t)
+            pruned_hint = pruning_orig(CSV_like,orig_types)
+            pattern = r"-?\s*Column \d+:(.*?)(?:\n|$)"
+            dict_strings = re.findall(pattern, pruned_hint)
             hint_list = [safe_parse_dict(d) for d in dict_strings]
             hint = serialize_dict(hint_list[0])
 
@@ -148,7 +151,7 @@ def main():
             pruned_table_hint = pruning_orig(CSV_like, orig_table_hint)
             pattern = r"-?\s*Column \d+:(.*?)(?:\n|$)"
             hint_strings = re.findall(pattern, pruned_table_hint)
-            hint = f"The entity labels in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[0]}."
+            hint = f"The entity labels with descriptions in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[0]}."
         
         elif info == "relation":
             table_relations = get_entity_relation(EL_result_table)
@@ -213,9 +216,10 @@ def main():
                 if i >= len(hint_list): hint = "Entities in this column are instances of the following wikidata entities: "
                 else: 
                     hint = serialize_dict(hint_list[i])
-            elif info == "entity" or info == "des":
+            elif info == "entity":
                 hint = f"The entity labels in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[i]}."
-
+            elif info == "des":
+                hint = f"The entity labels with descriptions in the Wikidata knowledge graph corresponding to the cells in this column are provided as a list: {hint_strings[i]}."
             hints.append(hint)
             
             messages.append(
